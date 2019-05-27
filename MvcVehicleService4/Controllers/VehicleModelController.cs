@@ -1,21 +1,4 @@
-﻿//using System;
-//using System.Collections.Generic;
-//using System.Linq;
-//using System.Web;
-//using System.Web.Mvc;
-
-//namespace MvcVehicleService4.Controllers
-//{
-//    public class VehicleModelController : Controller
-//    {
-//        // GET: VehicleModel
-//        public ActionResult Index()
-//        {
-//            return View();
-//        }
-//    }
-//}
-using MvcVehicleService4.Business;
+﻿using MvcVehicleService4.Business;
 using MvcVehicleService4.Business.Interface;
 using MvcVehicleService4.Models;
 using System;
@@ -30,19 +13,9 @@ namespace MvcVehicleService4.Controllers
 {
     public class VehicleModelController : Controller
     {
-        // GET: Vehicle
-        //public ActionResult Index()
-        //{
-        //    return View();
-        //}
-        // GET: Vehicle
-
-        VehicleBaseEntitiesConn _dbContext = new VehicleBaseEntitiesConn();
-        IVehicleBusiness vehicleBusiness = new VehicleBusiness();
-        //     public ActionResult Index()
-
-
-        //     public ActionResult Index(string Sorting_Order,  string searchString)
+             
+        IVehicleModelService vehicleModelService = new VehicleModelService();
+      
         public ActionResult Index(string Sorting_Order, string currentFilter, string searchString, int? page)
         {
 
@@ -51,8 +24,6 @@ namespace MvcVehicleService4.Controllers
             ViewBag.SortingVehicleModelID = Sorting_Order == "vehiclemodelid" ? "vehiclemodelid_desc" : "vehiclemodelid";
             ViewBag.SortingVehicleModelMakeId = Sorting_Order == "vehiclemodelmakeid" ? "vehiclemodelmakeid_desc" : "vehiclemodelmakeid";
             ViewBag.SortingVehicleModelAbrv = Sorting_Order == "vehicleabrv" ? "vehicleabrv_desc" : "vehicleabrv";
-
-
            
             if (searchString != null)
             {
@@ -63,28 +34,9 @@ namespace MvcVehicleService4.Controllers
                 searchString = currentFilter;
             }
             ViewBag.CurrentFilter = searchString;
-
-
-
-
-            //var vehiclemakes = from vehiclemake in vehicleBusiness.GetAllVehicleMakes()
-            //                  select vehiclemake;
-
-            var vehiclemodels = from vehiclemodel in this._dbContext.VehicleModels
-                                select vehiclemodel;
-
-            // var employeeList = _db.Employees.ToList();
-
-
-            if (!String.IsNullOrEmpty(searchString))
-            {
-                //   employees = employees.Where(s => s.LastName.Contains(searchString)|| s.FirstMidName.Contains(searchString));
-                //    vehiclemodels = vehiclemodels.Where(s => s.MakeId.Contains(searchString));
-
-                int searchResult = Int32.Parse(searchString);
-                vehiclemodels = vehiclemodels.Where(s => s.MakeId == (searchResult));
-              
-            }
+          
+             var vehiclemodels = vehicleModelService.GetVehicleModel(searchString);
+        
             switch (Sorting_Order)
             {
                 case "vehicleabrv_desc":
@@ -113,68 +65,35 @@ namespace MvcVehicleService4.Controllers
                     break;
             }
 
-            //  return View(vehiclemakes.ToList());
-            //   IVehicleBusiness vehicleBusiness = new VehicleBusiness();
-
-
-            //  List<VehicleMake> listVMModel = vehicleBusiness.GetAllVehicleMakes();
             List<VehicleModel> listVMModel = vehiclemodels.ToList();
             List<VehicleModelViewModel> listVMModelViewMmodel = new List<VehicleModelViewModel>();
-            //foreach ( var item in listDom)
-            //{
-            //    VehicleMake vm = new VehicleMake();
-            //       vm.ID = item.ID;
-            //    vm.Name = item.Name;
-            //    vm.Abrv = item.Abrv;
-            //    listviewmodel.Add(vm);
-            // }
 
             AutoMapper.Mapper.Map(listVMModel, listVMModelViewMmodel);
-
-
-            //   ViewBag.ListaVMView = listVMViewMmodel;
-            //  return View(vehiclemakes.ToList());
-            //   return View(listVMViewMmodel);
 
             int pageSize = 4;
             int pageNumber = (page ?? 1);
             return View(listVMModelViewMmodel.ToPagedList(pageNumber, pageSize));
         }
-
-
-
-
-        //public ActionResult Delete(int id)
-        //{
-        //    IVehicleBusiness vehicleBusiness = new VehicleBusiness();
-        //    // id = 7;
-        //    vehicleBusiness.DeleteVehicleMake(id);
-        //    return RedirectToAction("Index");
-        //   //  return View();
-
-        //}
         public ActionResult Delete(int id)
-
         {
-            //   var objemp = Iemp.GetEmployeeByID(id); // calling GetEmployeeByID method of EmployeeRepository
-            //     IVehicleBusiness vehicleBusiness = new VehicleBusiness();
-            var v_vehicleModel = vehicleBusiness.GetVehicleModelByID(id); // calling GetEmployeeByID method of EmployeeRepository
-            return View(v_vehicleModel);
-            //    return View();
-        }
+          var v_vehicleModel = vehicleModelService.GetVehicleModelByID(id);
+          var vv_vehicleModel = new VehicleModelViewModel();
+            AutoMapper.Mapper.Map(v_vehicleModel,vv_vehicleModel);
+            return View(vv_vehicleModel);
+         }
         [HttpPost]
-
         public ActionResult Delete(int id, VehicleModel vehicleModel)
         {
-            //   IVehicleBusiness vehicleBusiness = new VehicleBusiness();
-            try
+          //   id = 150;
+          try
             {
-                vehicleBusiness.DeleteVehicleModel(id);
+                vehicleModelService.DeleteVehicleModel(id);
                 return RedirectToAction("Index");
             }
             catch
             {
-                return View();
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "the data has not been deleted");
+               //  return View();
             }
         }
 
@@ -188,70 +107,54 @@ namespace MvcVehicleService4.Controllers
         [HttpPost]
         public ActionResult Create(FormCollection collection, VehicleModel vehicleModel)
         {
+           //  vehicleModel = null;
             try
             {
-                // TODO: Add insert logic here
-                //    IVehicleBusiness vehicleBusiness = new VehicleBusiness();
-                vehicleBusiness.InsertVehicleModel(vehicleModel);
+                vehicleModelService.InsertVehicleModel(vehicleModel);
                 return RedirectToAction("Index");
             }
             catch
             {
-                return View();
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "the data has not been created");
+              //   return View();
             }
         }
 
         // GET: /Emp/Edit/5
         public ActionResult Edit(int id)
         {
-            var v_vehicleModel = vehicleBusiness.GetVehicleModelByID(id);
-
-
-            var vv_vehicleModel = new VehicleModel();
-
-            vv_vehicleModel.ID = id;
-            vv_vehicleModel.MakeId = v_vehicleModel.MakeId;
-            vv_vehicleModel.Name = v_vehicleModel.Name;
-            vv_vehicleModel.Abrv = v_vehicleModel.Abrv;
+            var v_vehicleModel = vehicleModelService.GetVehicleModelByID(id);
+            var vv_vehicleModel = new VehicleModelViewModel();
+            AutoMapper.Mapper.Map(v_vehicleModel, vv_vehicleModel);
             return View(vv_vehicleModel);
-
-            //    return View();
-        }
+         }
         //
         // POST: /Emp/Edit/5
         [HttpPost]
         public ActionResult Edit(FormCollection collection, VehicleModel vehicleModel)
         {
+           //   vehicleModel.ID = 150;
             try
             {
-                // TODO: Add update logic here
+               vehicleModelService.UpdateVehicleModel(vehicleModel);
 
-                //   var v_vehicleMake = new VehicleMake();
-                vehicleBusiness.UpdateVehicleModel(vehicleModel);
+             //    Response.StatusCode = (int)HttpStatusCode.BadRequest;
                 return RedirectToAction("Index");
+              
             }
             catch
             {
-                return View();
-            }
+                  return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "the data has not been changed");
+               //  return View();
+             }
         }
-
         // GET: /Emp/Edit/5
         public ActionResult Details(int id)
         {
-            var v_vehicleModel = vehicleBusiness.GetVehicleModelByID(id);
-
-
-            var vv_vehicleModel = new VehicleModel();
-            
-            vv_vehicleModel.ID = id;
-            vv_vehicleModel.MakeId = v_vehicleModel.MakeId;
-            vv_vehicleModel.Name = v_vehicleModel.Name;
-            vv_vehicleModel.Abrv = v_vehicleModel.Abrv;
+            var v_vehicleModel = vehicleModelService.GetVehicleModelByID(id);
+            var vv_vehicleModel = new VehicleModelViewModel();
+            AutoMapper.Mapper.Map(v_vehicleModel, vv_vehicleModel);
             return View(vv_vehicleModel);
-
-
-            //    return View();
         }
 
 
